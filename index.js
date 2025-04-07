@@ -59,7 +59,20 @@ async function run() {
             res.send(result);
         });
 
-      
+        app.get('/cars/:id', async (req, res) => {
+            try {
+                const carId = req.params.id;
+                console.log(carId);
+                const car = await carCollection.findOne({ _id: new ObjectId(carId) });
+                console.log(car);
+                if (!car) {
+                    return res.status(404).json({ message: "car not found" });
+                }
+                res.json(car);
+            } catch (error) {
+                res.status(500).json({ message: "Server error" });
+            }
+        });
 
         
 
