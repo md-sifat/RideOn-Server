@@ -74,10 +74,34 @@ async function run() {
             }
         });
 
-        
+        app.delete('/cars/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await carCollection.deleteOne(query);
+            res.send(result);
+        });
 
 
-        
+        app.put("/cars/:id", async (req, res) => {
+            try {
+                const id = req.params.id;
+                const { _id, ...updatedcar } = req.body; // Exclude _id from update
+
+                const filter = { _id: new ObjectId(id) };
+                const updateDoc = { $set: updatedcar };
+
+                const result = await carCollection.updateOne(filter, updateDoc);
+
+                if (result.modifiedCount > 0) {
+                    res.send({ success: true, message: "car updated successfully" });
+                } else {
+                    res.send({ success: false, message: "No changes made or car not found" });
+                }
+            } catch (error) {
+                console.error("Error updating car:", error);
+                res.status(500).send({ success: false, message: "Internal Server Error" });
+            }
+        });
 
 
 
