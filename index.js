@@ -26,6 +26,7 @@ async function run() {
 
         const userCollection = client.db(process.env.MONGO_DB_NAME).collection("users");
         const carCollection = client.db(process.env.MONGO_DB_NAME).collection("cars");
+        const carBooking = client.db(process.env.MONGO_DB_NAME).collection("booking");
 
         app.get('/users', async (req, res) => {
             const user = await userCollection.find().toArray();
@@ -57,6 +58,50 @@ async function run() {
             const result = await carCollection.insertOne(car);
             console.log(result);
             res.send(result);
+        });
+
+        app.get('/bookings', async (req, res) => {
+            const bookings = await carBooking.find().toArray();
+            res.send(bookings);
+        });
+
+        app.post('/bookings', async (req, res) => {
+            const bookings = req.body;
+            const result = await carBooking.insertOne(bookings);
+            console.log(result);
+            res.send(result);
+        });
+
+        app.patch('/bookings/:bookingId', async (req, res) => {
+            try {
+                const { bookingId } = req.params;
+                const { status } = req.body;
+
+                if (!status) {
+                    return res.status(400).send({ error: 'Status is required' });
+                }
+                const validStatuses = ['pending', 'confirmed', 'cancelled'];
+                if (!validStatuses.includes(status)) {
+                    return res.status(400).send({ error: 'Invalid status value' });
+                }
+
+                const result = await carBooking.updateOne(
+                    { _id: new ObjectId(bookingId) },
+                    { $set: { status } }
+                );
+
+                if (result.matchedCount === 0) {
+                    return res.status(404).send({ error: 'Booking not found' });
+                }
+
+                console.log(`Booking ${bookingId} updated to status: ${status}`, result);
+
+                const updatedBooking = await carBooking.findOne({ _id: new ObjectId(bookingId) });
+                res.send(updatedBooking);
+            } catch (err) {
+                console.error('Error updating booking:', err);
+                res.status(500).send({ error: 'Failed to update booking' });
+            }
         });
 
         app.get('/cars/:id', async (req, res) => {
